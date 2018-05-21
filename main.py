@@ -32,12 +32,22 @@ def refresh_image():
     except:
         imageFile = resource_path("N.jpg")
     ctypes.windll.user32.SystemParametersInfoW(20, 0,imageFile,0)
+    print('OK!')
 
 def refresh_cycle():
-    refresh_image()
-    t = threading.Timer(60*refresh_rate,refresh_cycle)
-    t.start()
-    return t
+    print('Refreshing...' + time.asctime((time.localtime(time.time()))))
+    ri = threading.Timer(1,refresh_image)
+    ri.start()
+    global refresh_rate
+    global timer
+    try:
+        timer.cancel()
+        timer.join()
+        print('Stopped Timer')
+    except:
+        print('No Thread')
+    timer = threading.Timer(60*refresh_rate,refresh_cycle)
+    timer.start()
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -116,7 +126,6 @@ class Settings(wx.Dialog):
         global width
         global height
         global refresh_rate
-        global timer
         u = self.inputTxtOne.GetValue()
         if validators.url(u):
             url = u
@@ -137,8 +146,7 @@ class Settings(wx.Dialog):
             refresh_rate = r
         else:
             refresh_rate = 1
-        timer.cancel()
-        timer = refresh_cycle()
+        refresh_cycle()
         self.closeProgram()
 
     def onCancel(self, event):
@@ -184,6 +192,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
 
 class App(wx.App):
     def OnInit(self):
+        refresh_cycle()
         frame=wx.Frame(None, -1)
         self.SetTopWindow(frame)
         TaskBarIcon(frame)
@@ -194,6 +203,4 @@ def main():
     app.MainLoop()
 
 if __name__ == '__main__':
-    global timer
-    timer = refresh_cycle()
     main()
