@@ -3,6 +3,7 @@ import wx.adv
 import os
 import sys
 import ctypes
+import configparser
 from PIL import Image
 import urllib.request
 import time, threading
@@ -16,6 +17,29 @@ width = 5960
 height = 1080
 refresh_rate = 1 #in minutes
 
+config = configparser.ConfigParser()
+
+def write_file():
+    config.write(open('config.ini', 'w'))
+
+def load_config():
+    global url
+    global width
+    global height
+    global refresh_rate
+    if not os.path.exists('config.ini'):
+        config['Settings'] = {'url': url, 'width': width, 'height': height, 'refresh_rate': refresh_rate}
+
+        write_file()
+    else:
+        # Read File
+        config.read('config.ini')
+
+        url = config.get('Settings', 'url')
+        width = int(config.get('Settings', 'width'))
+        height = int(config.get('Settings', 'height'))
+        refresh_rate = int(config.get('Settings', 'refresh_rate'))
+
 def create_menu_item(menu, label, func):
     item = wx.MenuItem(menu, -1, label)
     menu.Bind(wx.EVT_MENU, func, id=item.GetId())
@@ -24,13 +48,16 @@ def create_menu_item(menu, label, func):
 
 def refresh_image():
     try:
+        print('Downloading: ' + url)
         urllib.request.urlretrieve(url, resource_path("M.jpg"))
         imageFile = resource_path("M.jpg")
-        im1 = Image.open(imageFile)
-        im1 = im1.resize((width, height), Image.NEAREST) 
-        im1.save(imageFile)
+        print('Sucess!')
     except:
         imageFile = resource_path("N.jpg")
+        print('Failed')
+    im1 = Image.open(imageFile)
+    im1 = im1.resize((width, height), Image.NEAREST) 
+    im1.save(imageFile)
     ctypes.windll.user32.SystemParametersInfoW(20, 0,imageFile,0)
     print('OK!')
 
@@ -147,6 +174,11 @@ class Settings(wx.Dialog):
         else:
             refresh_rate = 1
         refresh_cycle()
+        config.set('Settings', 'url', url)
+        config.set('Settings', 'width', str(width))
+        config.set('Settings', 'height', str(height))
+        config.set('Settings', 'refresh_rate', str(refresh_rate))
+        write_file()
         self.closeProgram()
 
     def onCancel(self, event):
@@ -193,6 +225,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
 class App(wx.App):
     def OnInit(self):
         refresh_cycle()
+        load_config()
         frame=wx.Frame(None, -1)
         self.SetTopWindow(frame)
         TaskBarIcon(frame)
