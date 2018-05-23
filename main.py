@@ -7,6 +7,7 @@ import configparser
 from PIL import Image
 import urllib.request
 import time, threading
+from threading import Thread
 import validators
 
 TRAY_TOOLTIP = 'Wallpaper Refresher'
@@ -15,7 +16,7 @@ TRAY_ICON = 'icon.ico'
 url = 'https://volcanoes.usgs.gov/observatories/hvo/cams/KIcam/images/M.jpg'
 width = 5960
 height = 1080
-refresh_rate = 1 #in minutes
+refresh_rate = 60.0 #in seconds
 
 config = configparser.ConfigParser()
 
@@ -38,7 +39,7 @@ def load_config():
         url = config.get('Settings', 'url')
         width = int(config.get('Settings', 'width'))
         height = int(config.get('Settings', 'height'))
-        refresh_rate = int(config.get('Settings', 'refresh_rate'))
+        refresh_rate = float(config.get('Settings', 'refresh_rate'))
 
 def create_menu_item(menu, label, func):
     item = wx.MenuItem(menu, -1, label)
@@ -63,7 +64,7 @@ def refresh_image():
 
 def refresh_cycle():
     print('Refreshing...' + time.asctime((time.localtime(time.time()))))
-    ri = threading.Timer(1,refresh_image)
+    ri = Thread(target = refresh_image)
     ri.start()
     global refresh_rate
     global timer
@@ -72,8 +73,8 @@ def refresh_cycle():
         timer.join()
         print('Stopped Timer')
     except:
-        print('No Thread')
-    timer = threading.Timer(60*refresh_rate,refresh_cycle)
+        print('\nNo Thread')
+    timer = threading.Timer(refresh_rate,refresh_cycle)
     timer.start()
 
 def resource_path(relative_path):
@@ -105,7 +106,7 @@ class Settings(wx.Dialog):
         self.labelThree = wx.StaticText(self.panel, wx.ID_ANY, 'Height')
         self.inputTxtThree = wx.TextCtrl(self.panel, wx.ID_ANY, str(height))
 
-        self.labelFour = wx.StaticText(self.panel, wx.ID_ANY, 'Refresh(minutes):')
+        self.labelFour = wx.StaticText(self.panel, wx.ID_ANY, 'Refresh Rate (seconds):')
         self.inputTxtFour = wx.TextCtrl(self.panel, wx.ID_ANY, str(refresh_rate))
 
         okBtn = wx.Button(self.panel, wx.ID_ANY, 'OK')
@@ -159,16 +160,16 @@ class Settings(wx.Dialog):
         else:
             url = 'https://volcanoes.usgs.gov/observatories/hvo/cams/KIcam/images/M.jpg'
         w = int(self.inputTxtTwo.GetValue())
-        if w > 0:
+        if w >= 1:
             width = w
         else:
             width = 1920
         h = int(self.inputTxtThree.GetValue())
-        if h > 0:
+        if h >= 1:
             height = h
         else:
             height = 1080
-        r = int(self.inputTxtFour.GetValue())
+        r = float(self.inputTxtFour.GetValue())
         if r > 0:
             refresh_rate = r
         else:
@@ -224,8 +225,8 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
 
 class App(wx.App):
     def OnInit(self):
-        refresh_cycle()
         load_config()
+        refresh_cycle()
         frame=wx.Frame(None, -1)
         self.SetTopWindow(frame)
         TaskBarIcon(frame)
