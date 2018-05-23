@@ -55,7 +55,7 @@ def refresh_image():
         print('Sucess!')
     except:
         imageFile = resource_path("N.jpg")
-        print('Failed')
+        print('Failed, loading ' + str(resource_path("N.jpg")))
     im1 = Image.open(imageFile)
     im1 = im1.resize((width, height), Image.NEAREST) 
     im1.save(imageFile)
@@ -109,8 +109,9 @@ class Settings(wx.Dialog):
         self.labelFour = wx.StaticText(self.panel, wx.ID_ANY, 'Refresh Rate (seconds):')
         self.inputTxtFour = wx.TextCtrl(self.panel, wx.ID_ANY, str(refresh_rate))
 
-        okBtn = wx.Button(self.panel, wx.ID_ANY, 'OK')
-        cancelBtn = wx.Button(self.panel, wx.ID_ANY, 'Cancel')
+        okBtn = wx.Button(self.panel, wx.ID_OK, 'OK')
+        okBtn.SetDefault()
+        cancelBtn = wx.Button(self.panel, wx.ID_CANCEL, 'Cancel')
         self.Bind(wx.EVT_BUTTON, self.onOK, okBtn)
         self.Bind(wx.EVT_BUTTON, self.onCancel, cancelBtn)
 
