@@ -17,6 +17,7 @@ url = 'https://volcanoes.usgs.gov/observatories/hvo/cams/KIcam/images/M.jpg'
 width = 5960
 height = 1080
 refresh_rate = 60.0 #in seconds
+EXITING = False
 
 config = configparser.ConfigParser()
 
@@ -48,6 +49,9 @@ def create_menu_item(menu, label, func):
     return item
 
 def refresh_image():
+    global EXITING
+    if EXITING:
+        return
     try:
         print('Downloading: ' + url)
         urllib.request.urlretrieve(url, resource_path("M.jpg"))
@@ -63,6 +67,9 @@ def refresh_image():
     print('OK!')
 
 def refresh_cycle():
+    global EXITING
+    if EXITING:
+        return    
     print('Refreshing...' + time.asctime((time.localtime(time.time()))))
     ri = Thread(target = refresh_image)
     ri.start()
@@ -219,10 +226,12 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
     def on_exit(self, event):
         global timer
         timer.cancel()
+        global EXITING
+        EXITING = True
         self.icon.Visible = False
-        wx.CallAfter(self.Destroy)
         self.Destroy()
-        sys.exit()
+        sys.exit(0)
+
 
 class App(wx.App):
     def OnInit(self):
